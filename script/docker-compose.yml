@@ -13,12 +13,10 @@ services:
       - $CONF_PATH/common.cnf:/etc/mysql/conf.d/common.cnf:ro
     healthcheck:
       test: "mysql -h 127.0.0.1 -p$MYSQL_ROOT_PASSWORD -e 'select 1;' || exit 1"
-      interval: 10s
+      interval: 5s
       start_period: 10s
     ports:
       - '3307:3307'
-    expose:
-      - '3306'
   mysql-replica:
     extends: mysql-primary
     container_name: mysql-replica

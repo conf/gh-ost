@@ -471,7 +471,11 @@ build_binary() {
 test_all() {
     build_binary
     test_dirs=$(find "$tests_path" -mindepth 1 -maxdepth 1 ! -path . -type d | grep "$test_pattern" | sort)
-    while read -r test_dir; do
+    # Read the test list on FD 3, not stdin: the mysql wrappers run
+    # `docker compose exec`, which attaches and drains stdin. On stdin (FD 0)
+    # the first such call inside the loop would swallow the remaining
+    # test-dir lines, ending the loop after a single test.
+    while read -r test_dir <&3; do
         test_name=$(basename "$test_dir")
         local test_start_time=$(date +%s)
         if ! test_single "$test_name"; then
@@ -493,7 +497,7 @@ test_all() {
             replica_terminology="replica"
         fi
         gh-ost-test-mysql-replica -e "start $replica_terminology"
-    done <<<"$test_dirs"
+    done 3<<<"$test_dirs"
 }
 
 verify_master_and_replica

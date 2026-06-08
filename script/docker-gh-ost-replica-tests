@@ -73,8 +73,6 @@ setup() {
       echo "Starting $TEST_MYSQL_IMAGE..."
     fi
 
-    echo "Compose file: $COMPOSE_FILE"
-
     docker compose up --wait
 
     echo "Waiting for MySQL..."
@@ -99,7 +97,7 @@ teardown() {
 
 compose_setup() {
     # export TEST_MYSQL_IMAGE so it's parsed in docker-compose.yml
-    export TEST_MYSQL_IMAGE="${TEST_MYSQL_IMAGE:-mysql:8.0}"
+    export TEST_MYSQL_IMAGE="${TEST_MYSQL_IMAGE:-mysql:8.0.41}"
     [[ "${2:-}" == "-t" ]] && toxiproxy=true || toxiproxy=false
 
     local compose_path="$GH_OST_ROOT/script"
@@ -114,9 +112,15 @@ compose_setup() {
     export CONF_PATH="$compose_path/docker/$major_minor"
 }
 
+usage() {
+    echo "Usage: $(basename "$0") up|down|ps|run [-t]" >&2
+    exit 1
+}
+
 main() {
+    local cmd="${1:-}"
+    [[ -z "$cmd" ]] && usage
     compose_setup "$@"
-    local cmd="$1"
     if [[ "$cmd" == "up" ]]; then
         setup
     elif [[ "$cmd" == "down" ]]; then
@@ -126,6 +130,8 @@ main() {
     elif [[ "$cmd" == "run" ]]; then
         shift 1
         "$GH_OST_ROOT/localtests/test.sh" -d "$@"
+    else
+        usage
     fi
 }
 

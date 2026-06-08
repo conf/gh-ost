@@ -6,6 +6,7 @@
 
 # Usage: localtests/test/sh [filter]
 # By default, runs all tests. Given filter, will only run tests matching given regep
+#set -euo pipefail
 
 tests_path=$(dirname $0)
 test_logfile=/tmp/gh-ost-test.log
@@ -78,9 +79,6 @@ verify_master_and_replica() {
     current_replica_server_uuid=$(gh-ost-test-mysql-replica -s -s -e "select @@global.server_uuid" 2>/dev/null || echo unsupported)
     echo "gtid_mode on master is ${current_gtid_mode} with enforce_gtid_consistency=${current_enforce_gtid_consistency}"
     echo "server_uuid on master is ${current_master_server_uuid}, replica is ${current_replica_server_uuid}"
-
-    echo "Gracefully sleeping for 3 seconds while replica is setting up..."
-    sleep 3
 
     if [ "$(gh-ost-test-mysql-replica -e "select 1" -ss)" != "1" ]; then
         echo "Cannot verify gh-ost-test-mysql-replica"

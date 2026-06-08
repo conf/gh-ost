@@ -1,0 +1,32 @@
+services:
+  mysql-primary:
+    image: $TEST_MYSQL_IMAGE
+    container_name: mysql-primary
+    command: --server-id=1
+    init: true
+    env_file:
+      - .env
+    environment:
+      - MYSQL_TCP_PORT=3307
+    volumes:
+      - $CONF_PATH/create_user.sql:/docker-entrypoint-initdb.d/create_user.sql:ro
+      - $CONF_PATH/common.cnf:/etc/mysql/conf.d/common.cnf:ro
+    healthcheck:
+      test: "mysql -h 127.0.0.1 -p$MYSQL_ROOT_PASSWORD -e 'select 1;' || exit 1"
+      interval: 10s
+      start_period: 10s
+    ports:
+      - '3307:3307'
+    expose:
+      - '3306'
+  mysql-replica:
+    extends: mysql-primary
+    container_name: mysql-replica
+    command: --server-id=2
+    environment:
+      - MYSQL_TCP_PORT=3308
+    volumes:
+      # all volumes from mysql-primary are also inherited here
+      - $CONF_PATH/start_replication.sql:/docker-entrypoint-initdb.d/start_replication.sql:ro
+    ports: !override
+      - '3308:3308'

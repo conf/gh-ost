@@ -3,4 +3,5 @@
 # This executes a command on the mysql-replica docker container created
 # from localtests/docker-compose.yml. It's used by localtests/test.sh.
 
-MYSQL_PWD=opensesame mysql -uroot -h0.0.0.0 -P3308 "$@"
+# use -h 127.0.0.1 to force TCP port check instead of a connection via unix socket
+docker compose exec --no-tty -e MYSQL_PWD=opensesame mysql-replica mysql -h 127.0.0.1 "$@"

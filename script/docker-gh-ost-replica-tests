@@ -101,7 +101,10 @@ ps() {
 
 teardown() {
     echo "Stopping and deleting containers..."
-    docker compose down
+    # -v also removes the anonymous /var/lib/mysql data volumes (the image
+    # declares VOLUME). Each `up` gets a fresh datadir regardless, so without
+    # -v these just pile up as dangling ~200MB volumes across runs.
+    docker compose down -v
 }
 
 compose_setup() {
@@ -116,14 +119,28 @@ compose_setup() {
         COMPOSE_FILE="${COMPOSE_FILE}:$compose_path/docker-compose.toxiproxy.yml"
     fi
 
-    local major_minor
-    major_minor="$(echo "$TEST_MYSQL_IMAGE" | sed 's/:/-/' | cut -d. -f1-2)"
-    export CONF_PATH="$compose_path/docker/$major_minor"
-
-    # MySQL 5.7 ships amd64-only images; force emulation on other arches (arm64).
-    if [[ "$major_minor" == "mysql-5.7" ]]; then
-        export DOCKER_DEFAULT_PLATFORM="${DOCKER_DEFAULT_PLATFORM:-linux/amd64}"
+    # Per-version config lives in docker/<flavor>-<major.minor> (e.g. mysql-8.0,
+    # mysql-5.7, percona-server-8.0). Derive <flavor> from the image repo
+    # basename and <major.minor> from the tag, so registry/repo prefixes like
+    # percona/percona-server:8.0.41-32 resolve correctly.
+    local repo tag flavor major_minor
+    repo="${TEST_MYSQL_IMAGE%%:*}"
+    tag="${TEST_MYSQL_IMAGE##*:}"
+    flavor="${repo##*/}"
+    major_minor="$(echo "$tag" | cut -d. -f1-2)"
+    export CONF_PATH="$compose_path/docker/${flavor}-${major_minor}"
+    if [[ ! -d "$CONF_PATH" ]]; then
+        echo "No config dir for image '$TEST_MYSQL_IMAGE' (expected $CONF_PATH)" >&2
+        exit 1
     fi
+
+    # Per-flavor knobs, with defaults. Each flavor dir may override these in an
+    # optional flavor.env (e.g. Percona reads config from /etc/my.cnf.d; the
+    # amd64-only 5.7 images set DOCKER_DEFAULT_PLATFORM). Keeps this script
+    # flavor-agnostic.
+    export MYSQL_CONFD=/etc/mysql/conf.d   # where the server reads common.cnf
+    # shellcheck disable=SC1091
+    [[ -f "$CONF_PATH/flavor.env" ]] && source "$CONF_PATH/flavor.env"
 
     # The containers present a cert signed by our test CA (see docker/certs).
     # Point OpenSSL-based clients (notably sysbench, which links

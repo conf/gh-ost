@@ -92,6 +92,20 @@ verify_master_and_replica() {
     [ "$replica_host" == "$(hostname)" ] && replica_host="127.0.0.1"
     echo "# replica verified at $replica_host:$replica_port"
 
+    # Detect the server version once; the image is fixed for the whole run, so
+    # there is no need to re-query it per test. Cache the values that depend on
+    # it (replication terminology and the version-gated skip checks).
+    mysql_version="$(gh-ost-test-mysql-replica -s -s -e "select @@version")"
+    mysql_version_comment="$(gh-ost-test-mysql-master -s -s -e "select @@version_comment")"
+    if [[ $mysql_version =~ "8.4" ]]; then
+        replica_terminology="replica"
+        seconds_behind_source="Seconds_Behind_Source"
+    else
+        replica_terminology="slave"
+        seconds_behind_source="Seconds_Behind_Master"
+    fi
+    echo "# detected version ${mysql_version} (${mysql_version_comment}); using '${replica_terminology}' terminology"
+
     if [ "$docker" = true ]; then
         master_host="0.0.0.0"
         master_port="3307"
@@ -112,14 +126,8 @@ echo_dot() {
 }
 
 start_replication() {
-    mysql_version="$(gh-ost-test-mysql-replica -e "select @@version")"
-    if [[ $mysql_version =~ "8.4" ]]; then
-        seconds_behind_source="Seconds_Behind_Source"
-        replica_terminology="replica"
-    else
-        seconds_behind_source="Seconds_Behind_Master"
-        replica_terminology="slave"
-    fi
+    # replica_terminology / seconds_behind_source are detected once in
+    # verify_master_and_replica.
     gh-ost-test-mysql-replica -e "stop $replica_terminology; start $replica_terminology;"
 
     num_attempts=0
@@ -253,8 +261,6 @@ test_single() {
 
     if [ -f $tests_path/$test_name/ignore_versions ]; then
         ignore_versions=$(cat $tests_path/$test_name/ignore_versions)
-        mysql_version=$(gh-ost-test-mysql-master -s -s -e "select @@version")
-        mysql_version_comment=$(gh-ost-test-mysql-master -s -s -e "select @@version_comment")
         if echo "$mysql_version" | egrep -q "^${ignore_versions}"; then
             echo -n "Skipping: $test_name"
             return 0
@@ -490,11 +496,6 @@ test_all() {
             local test_duration=$((test_end_time - test_start_time))
             echo
             echo "+ pass (${test_duration}s)"
-        fi
-        mysql_version="$(gh-ost-test-mysql-replica -e "select @@version")"
-        replica_terminology="slave"
-        if [[ $mysql_version =~ "8.4" ]]; then
-            replica_terminology="replica"
         fi
         gh-ost-test-mysql-replica -e "start $replica_terminology"
     done 3<<<"$test_dirs"

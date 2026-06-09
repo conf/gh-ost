@@ -2,3 +2,6 @@
 gtid-mode=ON
 enforce-gtid-consistency=ON
 character-set-server=utf8mb4
+ssl-ca=/etc/mysql/certs/ca.pem
+ssl-cert=/etc/mysql/certs/server-cert.pem
+ssl-key=/etc/mysql/certs/server-key.pem

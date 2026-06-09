@@ -110,6 +110,12 @@ compose_setup() {
     local major_minor
     major_minor="$(echo "$TEST_MYSQL_IMAGE" | sed 's/:/-/' | cut -d. -f1-2)"
     export CONF_PATH="$compose_path/docker/$major_minor"
+
+    # The containers present a cert signed by our test CA (see docker/certs).
+    # Point OpenSSL-based clients (notably sysbench, which links
+    # mariadb-connector-c and verifies the server cert) at that CA. The mysql
+    # client ignores it (ssl-mode=PREFERRED) and gh-ost has its own TLS stack.
+    export SSL_CERT_FILE="$compose_path/docker/certs/ca.pem"
 }
 
 usage() {

@@ -133,13 +133,13 @@ start_replication() {
     num_attempts=0
     while gh-ost-test-mysql-replica -e "show $replica_terminology status\G" | grep $seconds_behind_source | grep -q NULL; do
         ((num_attempts = num_attempts + 1))
-        if [ $num_attempts -gt 10 ]; then
+        if [ $num_attempts -gt 50 ]; then
             echo
             echo "ERROR replication failure"
             exit 1
         fi
         echo_dot
-        sleep 1
+        sleep 0.2
     done
 }
 
@@ -328,7 +328,7 @@ test_single() {
     fi
     # graceful sleep for replica to catch up
     echo_dot
-    sleep 1
+    sleep 0.2
 
     table_name="gh_ost_test"
     ghost_table_name="_gh_ost_test_gho"

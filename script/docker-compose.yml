@@ -11,6 +11,7 @@ services:
     volumes:
       - $CONF_PATH/create_user.sql:/docker-entrypoint-initdb.d/create_user.sql:ro
       - $CONF_PATH/common.cnf:/etc/mysql/conf.d/common.cnf:ro
+      - ./docker/certs:/etc/mysql/certs:ro
     healthcheck:
       test: "mysql -h 127.0.0.1 -p$MYSQL_ROOT_PASSWORD -e 'select 1;' || exit 1"
       interval: 5s

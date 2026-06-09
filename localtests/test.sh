@@ -125,6 +125,21 @@ echo_dot() {
     echo -n "."
 }
 
+# Block until the replica has applied everything committed on the master so
+# far. Used after seeding a test's schema/data on the master so gh-ost (which
+# inspects the replica) never sees a stale table. Returns immediately when
+# there is no lag; waits up to 10s otherwise. Relies on GTID (gtid_mode=ON);
+# falls back to a short sleep if GTID is unavailable.
+wait_replica_caught_up() {
+    local master_gtid
+    master_gtid="$(gh-ost-test-mysql-master -s -s -e "select @@global.gtid_executed" 2>/dev/null)"
+    if [ -n "$master_gtid" ]; then
+        gh-ost-test-mysql-replica -s -s -e "do WAIT_FOR_EXECUTED_GTID_SET('${master_gtid}', 10)" >/dev/null 2>&1
+    else
+        sleep 1
+    fi
+}
+
 start_replication() {
     # replica_terminology / seconds_behind_source are detected once in
     # verify_master_and_replica.
@@ -326,9 +341,10 @@ test_single() {
     if [ -f $tests_path/$test_name/order_by ]; then
         order_by="order by $(cat $tests_path/$test_name/order_by)"
     fi
-    # graceful sleep for replica to catch up
+    # wait for the replica to apply the test's schema/data before gh-ost
+    # inspects it (it inspects the replica under --test-on-replica)
     echo_dot
-    sleep 0.2
+    wait_replica_caught_up
 
     table_name="gh_ost_test"
     ghost_table_name="_gh_ost_test_gho"

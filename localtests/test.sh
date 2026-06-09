@@ -494,9 +494,9 @@ test_all() {
     build_binary
     test_dirs=$(find "$tests_path" -mindepth 1 -maxdepth 1 ! -path . -type d | grep "$test_pattern" | sort)
     # Read the test list on FD 3, not stdin: the mysql wrappers run
-    # `docker compose exec`, which attaches and drains stdin. On stdin (FD 0)
-    # the first such call inside the loop would swallow the remaining
-    # test-dir lines, ending the loop after a single test.
+    # `docker exec -i`, which attaches and drains stdin. On stdin (FD 0) the
+    # first such call inside the loop would swallow the remaining test-dir
+    # lines, ending the loop after a single test.
     while read -r test_dir <&3; do
         test_name=$(basename "$test_dir")
         local test_start_time=$(date +%s)
@@ -513,7 +513,9 @@ test_all() {
             echo
             echo "+ pass (${test_duration}s)"
         fi
-        gh-ost-test-mysql-replica -e "start $replica_terminology"
+        # No need to restart replication here: each test stops it
+        # (gh-ost --test-on-replica) and start_replication restarts it at the
+        # next test's start.
     done 3<<<"$test_dirs"
 }
 

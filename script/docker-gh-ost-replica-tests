@@ -111,6 +111,11 @@ compose_setup() {
     major_minor="$(echo "$TEST_MYSQL_IMAGE" | sed 's/:/-/' | cut -d. -f1-2)"
     export CONF_PATH="$compose_path/docker/$major_minor"
 
+    # MySQL 5.7 ships amd64-only images; force emulation on other arches (arm64).
+    if [[ "$major_minor" == "mysql-5.7" ]]; then
+        export DOCKER_DEFAULT_PLATFORM="${DOCKER_DEFAULT_PLATFORM:-linux/amd64}"
+    fi
+
     # The containers present a cert signed by our test CA (see docker/certs).
     # Point OpenSSL-based clients (notably sysbench, which links
     # mariadb-connector-c and verifies the server cert) at that CA. The mysql

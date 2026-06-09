@@ -22,10 +22,12 @@ services:
     extends: mysql-primary
     container_name: mysql-replica
     command: --server-id=2
+    # Volumes (create_user.sql, common.cnf, certs) are inherited from
+    # mysql-primary. Replication is NOT configured at init time: the harness
+    # (docker-gh-ost-replica-tests setup) applies start_replication.sql once
+    # both servers are up, so the primary is already reachable and the replica's
+    # IO thread connects on the first try instead of racing the primary's boot.
     environment:
       - MYSQL_TCP_PORT=3308
-    volumes:
-      # all volumes from mysql-primary are also inherited here
-      - $CONF_PATH/start_replication.sql:/docker-entrypoint-initdb.d/start_replication.sql:ro
     ports: !override
       - '3308:3308'

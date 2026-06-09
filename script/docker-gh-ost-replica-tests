@@ -79,6 +79,15 @@ setup() {
     poll_mysql "master" || exit 1
     poll_mysql "replica" || exit 1
 
+    # Configure replication now that both servers are reachable (rather than at
+    # container init), so the replica's IO thread connects on the first try.
+    echo "Starting replication..."
+    if ! gh-ost-test-mysql-replica < "$CONF_PATH/start_replication.sql"; then
+        echo " ❌ failed to start replication"
+        exit 1
+    fi
+    echo " ✔ replication OK"
+
     if [ "$toxiproxy" = true ]; then
         echo "Creating toxiproxy..."
         create_toxiproxy

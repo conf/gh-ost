@@ -1,0 +1,7 @@
+1. Fix toxiproxy:
+- convert imperative configuration to config file mounted in docker-compose.
+- fix docker compose down not cleaning up without -t
+- run test suite in this mode in all 4 flavours
+2. Change mysql-8.0 user creation syntax back to 5.7 style (native password) (to keep it as it was in master branch).
+3. sysbench
+  - move it to its 

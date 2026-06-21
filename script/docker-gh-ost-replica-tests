@@ -104,7 +104,10 @@ teardown() {
     # -v also removes the anonymous /var/lib/mysql data volumes (the image
     # declares VOLUME). Each `up` gets a fresh datadir regardless, so without
     # -v these just pile up as dangling ~200MB volumes across runs.
-    docker compose down -v
+    # --remove-orphans: a plain `down` doesn't load docker-compose.toxiproxy.yml,
+    # so the toxiproxy container from an earlier `up -t` would otherwise be left
+    # running (ports 8474/23308 bound) and break the next `-t` run.
+    docker compose down -v --remove-orphans
 }
 
 compose_setup() {

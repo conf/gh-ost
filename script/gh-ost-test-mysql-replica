@@ -12,5 +12,5 @@ if [[ -z "${GH_OST_TEST_USE_DOCKER:-}" ]] && command -v mysql >/dev/null 2>&1; t
     MYSQL_PWD=opensesame mysql -uroot -h 127.0.0.1 -P 3308 "$@"
 else
     # -i forwards stdin so callers can pipe SQL in (e.g. < create.sql).
-    docker exec -i -e MYSQL_PWD=opensesame mysql-replica mysql -h 127.0.0.1 "$@"
+    docker exec -i -e MYSQL_PWD=opensesame mysql-replica mysql -uroot -h 127.0.0.1 "$@"
 fi

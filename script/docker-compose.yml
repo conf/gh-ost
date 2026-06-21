@@ -15,7 +15,11 @@ services:
     healthcheck:
       test: "mysql -h 127.0.0.1 -uroot -p$MYSQL_ROOT_PASSWORD -e 'select 1;' || exit 1"
       interval: 5s
-      start_period: 10s
+      # Generous first-boot window: emulated amd64 5.7 on arm64 can take 60s+ to
+      # init a fresh datadir. Health failures during start_period don't count, so
+      # `up --wait` won't abort before the server is reachable.
+      start_period: 120s
+      retries: 10
     ports:
       - '3307:3307'
   mysql-replica:

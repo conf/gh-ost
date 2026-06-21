@@ -177,7 +177,7 @@ build_ghost_command() {
     --skip-metadata-lock-check \
     --initially-drop-old-table \
     --initially-drop-ghost-table \
-    --throttle-query='select timestampdiff(second, min(last_update), now()) < ${THROTTLE_SECONDS:-0} from _${table_name}_ghc' \
+    --throttle-query='select timestampdiff(second, min(last_update), now()) < ${THROTTLE_SECONDS:-2} from _${table_name}_ghc' \
     --throttle-flag-file=$throttle_flag_file \
     --serve-socket-file=/tmp/gh-ost.test.sock \
     --initially-drop-socket-file \

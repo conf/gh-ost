@@ -79,7 +79,7 @@ setup() {
     fi
 }
 
-ps() {
+status() {
   docker compose ps
 }
 
@@ -137,7 +137,7 @@ compose_setup() {
 }
 
 usage() {
-    echo "Usage: $(basename "$0") up|down|ps|run [-t]" >&2
+    echo "Usage: $(basename "$0") up|down|status|run [-t]" >&2
     exit 1
 }
 
@@ -149,8 +149,8 @@ main() {
         setup
     elif [[ "$cmd" == "down" ]]; then
         teardown
-    elif [[ "$cmd" == "ps" ]]; then
-        ps
+    elif [[ "$cmd" == "status" ]]; then
+        status
     elif [[ "$cmd" == "run" ]]; then
         shift 1
         "$GH_OST_ROOT/localtests/test.sh" -d "$@"

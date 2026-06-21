@@ -34,22 +34,6 @@ poll_mysql() {
     return 0
 }
 
-mysql-source() {
-    if [[ $TEST_MYSQL_IMAGE =~ "mysql:8.4" ]]; then
-        gh-ost-test-mysql-master --ssl-mode=required "$@"
-    else
-        gh-ost-test-mysql-master "$@"
-    fi
-}
-
-mysql-replica() {
-    if [[ $TEST_MYSQL_IMAGE =~ "mysql:8.4" ]]; then
-        gh-ost-test-mysql-replica --ssl-mode=required "$@"
-    else
-        gh-ost-test-mysql-replica "$@"
-    fi
-}
-
 create_toxiproxy() {
     curl --fail -X POST http://localhost:8474/proxies \
         -H "Content-Type: application/json" \
